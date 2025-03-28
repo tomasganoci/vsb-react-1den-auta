@@ -1,0 +1,12 @@
+table,
+td,
+th {
+  border: 1px solid white;
+  padding: 0.5rem 1rem;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.table-container {
+  overflow-x: auto;
+  max-width: 100%
+}

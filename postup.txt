@@ -1,0 +1,524 @@
+1. založení nového React projektu
+
+	- npm create vite@latest
+---------------------------------------------------------------------------------------------------------------------------------------------	
+2. promazání souborů
+	- index.css:
+		body {
+			background-color: #3b3b3b;
+			color: #fff;
+		}
+	- v App.css pouze:
+		.container {
+		  width: 800px;
+		  margin: 0 auto;
+		}
+	- smazat složku Assets
+	- vytvořit složku components
+	- promazat App.jsx - pod return bude jen
+		      <div className='container'></div>
+---------------------------------------------------------------------------------------------------------------------------------------------	
+3. rawData.json - import dat z json
+
+	V App.jsx:
+	- import rawData from "./rawData.json";
+	
+	- const [cars, setCars] = useState(rawData.cars);
+	
+	- <div className='container'>
+        {cars.map(car => {return <p key={car.id}>{car.brand} {car.model} {car.reg}</p>})}
+      </div>
+	  zkusmo výpis aut
+	  
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+4. Ať si zkusí vypsat auta do tabulky
+---------------------------------------------------------------------------------------------------------------------------------------------
+5. Z tabulky si uděláme komponentu - snippet rfce
+
+	- CarTable.jsx:
+	
+		import React from "react";
+		import "./CarTable.css";
+
+		function CarTable({ data }) {
+		  return (
+			<table>
+			  <thead>
+				<tr>
+				  <th>Značka</th>
+				  <th>Model</th>
+				  <th>Reg. značka</th>
+				  <th>Najeto km</th>
+				  <th>Rok výroby</th>
+				  <th colSpan={2}></th>
+				</tr>
+			  </thead>
+			  <tbody>
+				{data.map((item) => (
+				  <tr key={item.id}>
+					<td>{item.brand}</td>
+					<td>{item.model}</td>
+					<td>{item.reg}</td>
+					<td>{item.km}</td>
+					<td>{item.year}</td>
+					<td>
+					  <button>Edituj</button>
+					</td>
+					<td>
+					  <button>Smaž</button>
+					</td>
+				  </tr>
+				))}
+			  </tbody>
+			</table>
+		  );
+		}
+
+		export default CarTable;
+		
+	- zprovoznění tlačítek v tabulce
+	        <td>
+              <button onClick={() => handleChange(item.id)}>Edituj</button>
+            </td>
+            <td>
+              <button onClick={() => handleDelete(item.id)}>Smaž</button>
+            </td>
+			
+	- a nezapomenout na props
+	      <CarTable
+			data={carsToShow}
+			handleDelete={handleDelete}
+			handleChange={handleChange}
+		  />
+	
+	- a na handlery v App.jsx
+		const handleDelete = () => {};
+		const handleChange = () => {};
+		
+---------------------------------------------------------------------------------------------------------------------------------------------	
+6. nezapomenout na import do App.jsx a předání parametru
+	- import CarTable from "./components/CarTable/CarTable";
+	
+	- <div className='container'>
+        <CarTable data={cars}/>
+      </div>
+---------------------------------------------------------------------------------------------------------------------------------------------
+7. vyrobíme si filter
+	- nová komponenta FilterForm.jsx
+	
+	- prop data - všechny auta, ze kterých si vyfitrujeme jen brands
+	
+		const[brands, setBrands] = useState([])
+
+		useEffect(() => {setBrands(data.map(item => item.brand))}, [data])
+		
+	- vyrobíme si základ formuláře
+		    <fieldset>
+			  <legend>filtr vyhledávání</legend>
+			  <div>
+				<select
+				  name="brand"
+				  id="brand"
+				  multiple
+				>
+				  {brands.map((brand) => (
+					<option key={brand}>{brand}</option>
+				  ))}
+				</select>
+			  </div>
+			</fieldset>
+	  
+	- pusťe si konzoli - spousta chyb, refresh a co to píše? Co máme špatně?
+		dupicity v brands
+		
+		  useEffect(() => {
+			setBrands(Array.from(new Set(data.map((car) => car.brand))));
+		  }, [data]);
+---------------------------------------------------------------------------------------------------------------------------------------------		  
+8. ukládání vybraných značek
+
+		- const [selBrands, setSelBrands] = useState([]);
+		
+		-   <select
+			  name="brand"
+			  id="brand"
+			  multiple
+			  value={selBrands}
+			  onChange={handleChange}
+			>
+			  {brands.map((brand) => (
+				<option key={brand}>{brand}</option>
+			  ))}
+			</select>
+		
+		- const handleChange = (e) => {}; ... pak doděláme
+---------------------------------------------------------------------------------------------------------------------------------------------		
+9. druhá možnost filtrování
+
+	- const [selRegistration, setSelRegistration] = useState("");
+	- <div>
+        <input
+          disabled={criteria === "brand"}
+          type="text"
+          id="reg"
+          name="reg"
+          value={selRegistration}
+          onChange={handleChange}
+        />
+      </div>
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+10. handleChange - vysvětlit dekompozici objektu
+
+	- const handleChange = (e) => {
+		const { value, selectedOptions, name } = e.target;
+		switch (name) {
+		  case "brand": {
+			const tempBrands = Array.from(selectedOptions).map(
+			  (option) => option.value
+			);
+			setSelBrands(tempBrands);
+			break;
+		  }
+		  case "reg": {
+			setSelRegistration(value.trim());
+			break;
+		  }
+		  default:
+			break;
+		}
+	  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+11. kritéria výběru
+	- const [criteria, setCriteria] = useState("brand");
+	
+	- disabled atribut do inputů: 
+		- disabled={criteria === "reg"}
+		- disabled={criteria === "brand"}
+		
+	- vyrobíme si dva radio inputy, abychom to mohli přepínat
+		<div>
+			<input
+			  type="radio"
+			  name="filter-criteria"
+			  id="brand-criteria"
+			  value="brand"
+			  checked={criteria === "brand"}
+			  onChange={handleCriteria}
+			/>
+			<label htmlFor="brand-criteria">hledání podle značky vozidla</label>
+		</div>
+		<div>
+			<input
+			  type="radio"
+			  name="filter-criteria"
+			  id="reg-criteria"
+			  value="reg"
+			  checked={criteria === "reg"}
+			  onChange={handleCriteria}
+			/>
+			<label htmlFor="reg-criteria">hledání podle registrační značky</label>
+		 </div>
+		 
+	- handler
+		  const handleCriteria = (e) => {
+			setCriteria(e.target.value);
+		  };
+---------------------------------------------------------------------------------------------------------------------------------------------
+12. tlačítka na spuštění filtrování a reset
+		
+		<div>
+			<button onClick={handleFilter}>Filtruj</button>
+			<button onClick={handleReset}>Resetuj</button>
+		</div>
+		
+		- a handlery
+			---------------------------------------
+		  const handleReset = () => {
+			handleFilterData(data);
+			setSelBrands([]);
+			setSelRegistration("");
+		  };
+		  
+			---------------------------------------
+		  const handleFilter = () => {
+			let filtered;
+			switch (criteria) {
+			  case "brand": {
+				filtered = data.filter((car) => selBrands.includes(car.brand));
+				break;
+			  }
+			  case "reg": {
+				filtered = data.filter((car) => car.reg === selRegistration);
+				break;
+			  }
+			  default:
+				break;
+			}
+			handleFilterData(filtered);
+		  };
+		  
+		- nezapomenout na prop handleFilterData
+---------------------------------------------------------------------------------------------------------------------------------------------
+13. handleFilterData v App.jsx
+
+	- nová proměnná - protože v tabulce nechceme ukazovat všechna auta
+		const [carsToShow, setCarsToShow] = useState(rawData.cars);
+	
+	- handler - auta se nám vyfiltrovala v komponentě FilterForm, tak už je jen nastavíme jako vstupní data tabulky v jejich props
+		const handleFilterData = (filteredCars) => {
+			setCarsToShow(filteredCars);
+		  };
+		  
+	- return 
+		<FilterForm data={cars} handleFilterData={handleFilterData} />
+		<CarTable data={carsToShow} />
+---------------------------------------------------------------------------------------------------------------------------------------------
+FILTROVÁNÍ HOTOVO
+---------------------------------------------------------------------------------------------------------------------------------------------
+14. vytvoření komponenty UniForm.jsx
+
+	- props { data, handleNewData, handleUpdate, id }
+			- id - pro identifikaci
+			- data - objekt 1 auta
+			- handleNewData - budou se z této komponenty měnit objekty aut v App.jsx
+			- handleUpdate - řekne se App.jsx, co se má udělat
+			
+	- pod return si vytvoříme formulář, který bude reprezentovat všechny náležitosti objektu auta		
+		return (
+			<div id={id}>
+			  <div>
+				<input
+				  type="text"
+				  name={`${id}-brand`}
+				  id={`${id}-brand`}
+				  value={data.brand}
+				  onChange={handleChange}
+				/>
+				<label htmlFor={`${id}-brand`}>Značka</label>
+			  </div>
+			  <div>
+				<input
+				  type="text"
+				  name={`${id}-model`}
+				  id={`${id}-model`}
+				  value={data.model}
+				  onChange={handleChange}
+				/>
+				<label htmlFor={`${id}-model`}>Model</label>
+			  </div>
+			  <div>
+				<input
+				  type="text"
+				  name={`${id}-reg`}
+				  id={`${id}-reg`}
+				  value={data.reg}
+				  onChange={handleChange}
+				/>
+				<label htmlFor={`${id}-reg`}>Reg. značka</label>
+			  </div>
+			  <div>
+				<input
+				  type="number"
+				  name={`${id}-km`}
+				  id={`${id}-km`}
+				  value={data.km}
+				  onChange={handleChange}
+				/>
+				<label htmlFor={`${id}-km`}>Najeto</label>
+			  </div>
+			  <div>
+				<input
+				  type="number"
+				  name={`${id}-year`}
+				  id={`${id}-year`}
+				  value={data.year}
+				  onChange={handleChange}
+				/>
+				<label htmlFor={`${id}-year`}>Rok výroby</label>
+			  </div>
+			  <div>
+				<button onClick={() => handleUpdate(id)}>Odešli</button>
+			  </div>
+			</div>
+		  );
+	
+	- handler 
+		const handleChange = (e) => {
+			let temp = { ...data };
+			const { name, value } = e.target;
+			switch (name) {
+			  case `${id}-brand`: {
+				temp.brand = value;
+				break;
+			  }
+			  case `${id}-model`: {
+				temp.model = value;
+				break;
+			  }
+			  case `${id}-reg`: {
+				temp.reg = value;
+				break;
+			  }
+			  case `${id}-km`: {
+				temp.km = parseInt(value) || 0;
+				break;
+			  }
+			  case `${id}-year`: {
+				temp.year = parseInt(value) || 0;
+				break;
+			  }
+			  default:
+				break;
+			}
+			handleNewData(temp, id);
+		  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+15. handling v App.jsx pro editaci a smazání
+
+	- vytvoření 2 nových proměnných - newCar a carToChange - s těmi bude pracovat 2x komponenta UniForm
+	
+		  const [newCar, setNewCar] = useState({
+			id: cars.length > 0 ? Math.max(...cars.map((car) => car.id)) + 1 : 1,
+			brand: "",
+			model: "",
+			reg: "",
+			km: "",
+			year: "",
+		  });
+		  
+		  const [carToChange, setCarToChange] = useState({
+			id: 0,
+			brand: "",
+			model: "",
+			reg: "",
+			km: "",
+			year: "",
+		  });
+	
+	- handlery zatím takto
+		const handleNewData = () => {};
+		const handleUpdate = () => {};
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+16. handleDelete vyfiltrujeme pryč to vybrané auto
+		  const handleDelete = (idToDel) => {
+			const temp = cars.filter((car) => car.id !== idToDel);
+			setCars(temp);
+			setCarsToShow(temp);
+		  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+17. handleChange - nastaví do formuláře to auto, které chceme změnit
+		const handleChange = (idToChange) => {
+			const temp = cars.filter((car) => car.id === idToChange);
+			setCarToChange(...temp);
+		  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+18. handleNewData
+
+	  const handleNewData = (updatedCar, source) => {
+		switch (source) {
+		  case "add-car-form": {
+			setNewCar(updatedCar);
+			break;
+		  }
+		  case "change-car-form": {
+			setCarToChange(updatedCar);
+			break;
+		  }
+		  default:
+			break;
+		}
+	  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+19. doplňkové metody a hlavně update
+		const fillEmptyInfos = (car) => {
+			const filledCar = {
+			  ...car,
+			  brand: car.brand.trim() ? car.brand : "empty",
+			  model: car.model.trim() ? car.model : "empty",
+			  reg: car.reg.trim() ? car.reg : "empty",
+			  km: parseInt(car.km) || 0,
+			  year: parseInt(car.year) || 0,
+			};
+			return filledCar;
+		  };
+----------------------------------------------
+		  const confirmCar = (car) => {
+			return window.confirm(
+			  "Opravdu chcete odeslat data?\n" +
+				`Značka: ${car.brand}\n` +
+				`Model: ${car.model}\n` +
+				`Reg.značka: ${car.reg}\n` +
+				`Kilometry: ${car.km}\n` +
+				`Rok výroby: ${car.year}\n`
+			);
+		  };
+----------------------------------------------
+		  const handleUpdate = (source) => {
+			let temp;
+			switch (source) {
+			  case "add-car-form": {
+				temp = fillEmptyInfos(newCar);
+				if (confirmCar(temp)) {
+				  const carsToUpdate = [...cars];
+				  carsToUpdate.push(temp);
+				  setCars(carsToUpdate);
+				  setCarsToShow(carsToUpdate);
+				  setNewCar({
+					id: newCar.id + 1,
+					brand: "",
+					model: "",
+					reg: "",
+					km: "",
+					year: "",
+				  });
+				  alert("Data byla úspěšně odeslána");
+				} else {
+				  alert("Odeslání dat bylo zrušeno");
+				}
+				break;
+			  }
+			  case "change-car-form": {
+				temp = fillEmptyInfos(carToChange);
+				if (confirmCar(temp)) {
+				  const index = cars.findIndex((car) => car.id === temp.id);
+				  if (index !== -1) {
+					const carsToUpdate = [...cars];
+					carsToUpdate[index] = temp;
+					setCars(carsToUpdate);
+					setCarsToShow(carsToUpdate);
+					setCarToChange({
+					  id: 0,
+					  brand: "",
+					  model: "",
+					  reg: "",
+					  km: "",
+					  year: "",
+					});
+					alert("Aktualizace dat úspěšná");
+				  } else {
+					alert("Auto s daným id nebylo nalezeno");
+					setCarToChange({
+					  id: 0,
+					  brand: "",
+					  model: "",
+					  reg: "",
+					  km: "",
+					  year: "",
+					});
+				  }
+				} else {
+				  alert("Aktualizace neproběhla");
+				}
+				break;
+			  }
+			  default:
+				break;
+			}
+		  };
+---------------------------------------------------------------------------------------------------------------------------------------------	  
+20. pokud není do tabulky co ukázat, napíše se hláška
+	  if (data.length === 0) {
+		return <p>žádná data k zobrazení</p>;
+	  }
+
+	  https://github.com/veetecheck/cars
